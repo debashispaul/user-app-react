@@ -1,0 +1,128 @@
+import React, { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+
+const formJson = {
+  title: "User Registration",
+  fields: [
+    { label: "Name", type: "text", name: "name", required: true },
+    { label: "Age", type: "number", name: "age" },
+    { label: "Subscribe", type: "checkbox", name: "subscribe" },
+    {
+      label: "Gender",
+      type: "select",
+      name: "gender",
+      options: ["Male", "Female", "Other"],
+    },
+  ],
+};
+
+const getDefaultValues = (fields) =>
+  fields.reduce((acc, field) => {
+    if (field.type === "checkbox") acc[field.name] = false;
+    else acc[field.name] = "";
+    return acc;
+  }, {});
+
+export default function DynamicForm() {
+  const {
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm({
+    defaultValues: getDefaultValues(formJson.fields),
+  });
+
+  const [submittedData, setSubmittedData] = useState(null);
+
+  const onSubmit = (data) => {
+    console.log('data: ', data);
+    setSubmittedData(data);
+    console.log('data1: ', submittedData);
+  };
+
+  const handleReset = () => {
+    reset(getDefaultValues(formJson.fields));
+    console.log('Reset: ', getDefaultValues(formJson.fields));
+    setSubmittedData(null);
+    console.log('Reset1: ', submittedData);
+  };
+
+  return (
+    <>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <h2>{formJson.title}</h2>
+        {formJson.fields.map((ele) => (
+          <div key={ele.name} style={{ marginBottom: 12 }}>
+            <label>
+              {ele.label}
+              {ele.required && " *"}
+            </label>
+            <Controller
+              name={ele.name}
+              control={control}
+              rules={
+                ele.required
+                  ? { required: `${ele.label} is required` }
+                  : undefined
+              }
+              render={({ field: controllerField }) => {
+                switch (ele.type) {
+                  case "text":
+                  case "number":
+                    return (
+                      <input
+                        {...controllerField}
+                        type={ele.type}
+                        placeholder={`Enter ${ele.label.toLowerCase()}`}
+                      />
+                    );
+                  case "checkbox":
+                    return (
+                      <input
+                        {...controllerField}
+                        type="checkbox"
+                        checked={!!controllerField.value}
+                      />
+                    );
+                  case "select":
+                    return (
+                      <select {...controllerField}>
+                        <option value="">
+                          Select {ele.label.toLowerCase()}
+                        </option>
+                        {ele.options.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    );
+                  default:
+                    return null;
+                }
+              }}
+            />
+            {errors[ele.name] && (
+              <span style={{ color: "red", marginLeft: 8 }}>
+                {errors[ele.name].message}
+              </span>
+            )}
+          </div>
+        ))}
+        <button type="submit">Submit</button>
+        <button type="button" onClick={handleReset} style={{ marginLeft: 8 }}>
+          Reset
+        </button>
+      </form>
+      {submittedData && (
+        <div style={{ marginTop: 24 }}>
+          <h3>Submitted Data</h3>
+          <pre style={{ background: "#f4f4f4", padding: 12 }}>
+            {JSON.stringify(submittedData, null, 2)}
+          </pre>
+        </div>
+      )}
+    </>
+  );
+}
