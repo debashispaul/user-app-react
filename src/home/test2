@@ -1,0 +1,162 @@
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import React, { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { SCHEMA } from "../utils/constants";
+import { getDefaultValues, getRules } from "../utils/dynamic-render-helper";
+import DataPreview from "./DataPreview";
+
+export default function UserRegistrationForm() {
+  const {
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm({
+    defaultValues: getDefaultValues(SCHEMA.fields),
+  });
+
+  const [formData, setFormData] = useState(null);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const toggleDialog = (isOpen) => () => {
+    setDialogOpen(isOpen);
+  };
+
+  const onSubmit = (data) => {
+    console.log("data: ", data);
+    setFormData(data);
+    console.log("data1: ", formData);
+  };
+
+  const handleReset = () => {
+    reset(getDefaultValues(SCHEMA.fields));
+    console.log("Reset: ", getDefaultValues(SCHEMA.fields));
+    setFormData(null);
+    console.log("Reset1: ", formData);
+  };
+
+  return (
+    <>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <section className="body-section">
+          <div className="form-container">
+            <h2>{SCHEMA.title}</h2>
+            {SCHEMA.fields.map((ele) => (
+              <div key={ele.name} className="search-bar">
+                <label className="form-label">
+                  {ele.label}
+                  {ele.required && " *"}
+                </label>
+                <Controller
+                  name={ele.name}
+                  control={control}
+                  rules={getRules(ele)}
+                  //   rules={
+                  //     ele.required
+                  //       ? { required: `${ele.label} is required` }
+                  //       : undefined
+                  //   }
+                  render={({ field: controllerField }) => {
+                    switch (ele.type) {
+                      case "text":
+                      case "number":
+                        return (
+                          <TextField
+                            {...controllerField}
+                            type={ele.type}
+                            variant="outlined"
+                            placeholder={`Enter ${ele.label.toLowerCase()}`}
+                            error={
+                              errors[ele.name] &&
+                              errors[ele.name].message &&
+                              errors[ele.name].message.length
+                            }
+                            helperText={errors[ele.name]?.message}
+                            onKeyDown={(event) => {
+                              if (
+                                ele.type === "number" &&
+                                ele.name === "age" &&
+                                (event.key === "e" ||
+                                  event.key === "E" ||
+                                  event.key === "-" ||
+                                  event.key === "+")
+                              ) {
+                                event.preventDefault();
+                              }
+                            }}
+                          />
+                        );
+                      case "checkbox":
+                        return (
+                          <input
+                            {...controllerField}
+                            type="checkbox"
+                            className="checkbox"
+                            checked={!!controllerField.value}
+                          />
+                        );
+                      case "select":
+                        return (
+                          <select
+                            className="select-dropdown"
+                            {...controllerField}
+                          >
+                            <option value="">
+                              {`Select ${ele.label.toLowerCase()}`}
+                            </option>
+                            {ele.options.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
+                        );
+                      default:
+                        return null;
+                    }
+                  }}
+                />
+                {/* {errors[ele.name] && (
+              <span style={{ color: "red", marginLeft: 8 }}>
+                {errors[ele.name].message}
+              </span>
+            )} */}
+              </div>
+            ))}
+            {/* <button type="submit">Submit</button>
+        <button type="button" onClick={handleReset} style={{ marginLeft: 8 }}>
+          Reset
+        </button> */}
+          </div>
+        </section>
+        <footer>
+          <section className="btn-container">
+            <Button variant="outlined" onClick={handleReset}>
+              CLEAR
+            </Button>
+            <Button
+              variant="contained"
+              disableElevation
+              type="submit"
+              className="submit"
+              onClick={toggleDialog(true)}
+            >
+              SUBMIT
+            </Button>
+          </section>
+        </footer>
+      </form>
+      {/* {formData && (
+        <div style={{ marginTop: 24 }}>
+          <h3>Submitted Data</h3>
+          <pre style={{ background: "#f4f4f4", padding: 12 }}>
+            {JSON.stringify(formData, null, 2)}
+          </pre>
+        </div>
+      )} */}
+      <DataPreview data={formData} open={dialogOpen} onClose={toggleDialog(false)}/>
+    </>
+  );
+}
